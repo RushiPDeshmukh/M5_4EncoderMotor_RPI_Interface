@@ -9,3 +9,10 @@ Step4: `sudo i2cdetect -y 1 `
 ## Resources
 
 - Mecanum wheel kinematics : [Eurobot Mecanum Kinematics](https://ecam-eurobot.github.io/Tutorials/mechanical/mecanum.html)
+
+
+
+
+![Forward and Inverse kinematics](/images/image.png)
+
+![Longitudinal,transversal and angular velocity](/images/image-1.png)
