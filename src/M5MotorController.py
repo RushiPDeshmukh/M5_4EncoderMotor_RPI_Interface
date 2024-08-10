@@ -1,5 +1,4 @@
 from smbus3 import SMBus
-import time
 # |  0  |       1     |      2     |     3      |    4, 5, 6, 7  |          8         |     9    |    10   |    11   |     12      |
 # | mod |  position-p | position-i | position-d | position-point | position-max-speed |  speed-p | speed-i | speed-d | speed-point |
 
@@ -42,6 +41,16 @@ class M5Module4EncoderMotor:
 
         return (read_buf[0] << 24) | (read_buf[1] << 16) | (read_buf[2] << 8) | read_buf[3]
     
+    def getEncoderValues(self): 
+        addr  = self.MODULE_4ENCODERMOTOR_ENCODER_ADDR
+        values=[]
+        with SMBus(1) as bus:
+            read_buf = bus.read_i2c_block_data(self.MODULE_4ENCODERMOTOR_ADDR,addr,16)
+        for i in range(0, 16, 4):
+            value = (read_buf[i] << 24) | (read_buf[i+1] << 16) | (read_buf[i+2] << 8) | read_buf[i+3]
+            values.append(value)
+        return values
+    
     def setEncoderValue(self, index, encoder):
         index        = self.checkIndex(index)
         addr         = self.MODULE_4ENCODERMOTOR_ENCODER_ADDR + 4 * index
@@ -53,11 +62,27 @@ class M5Module4EncoderMotor:
         with SMBus(1) as bus:
            bus.write_i2c_block_data(self.MODULE_4ENCODERMOTOR_ADDR,addr,write_buf)
 
+    def setEncoderValues(self, encoder):
+        addr         = self.MODULE_4ENCODERMOTOR_ENCODER_ADDR
+        write_buf = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        for i in range(4):
+            write_buf[i*4 + 0] = encoder[i] >> 24
+            write_buf[i*4 + 1] = encoder[i] >> 16
+            write_buf[i*4 + 2] = encoder[i] >> 8
+            write_buf[i*4 + 3] = encoder[i] & 0xff
+        with SMBus(1) as bus:
+           bus.write_i2c_block_data(self.MODULE_4ENCODERMOTOR_ADDR,addr,write_buf)
+
     def setMotorSpeed(self, index, duty):
         index = self.checkIndex(index)
         addr  = self.MODULE_4ENCODERMOTOR_PWM_DUTY_ADDR + index
         with SMBus(1) as bus:
             bus.write_byte_data(self.MODULE_4ENCODERMOTOR_ADDR,addr,duty)
+
+    def setMotorSpeeds(self,duty_array):
+        addr  = self.MODULE_4ENCODERMOTOR_PWM_DUTY_ADDR 
+        with SMBus(1) as bus:
+            bus.write_i2c_block_data(self.MODULE_4ENCODERMOTOR_ADDR,addr,duty_array)
 
     def getMotorSpeed(self, index):
         
@@ -146,15 +171,3 @@ class M5Module4EncoderMotor:
         c = int.from_bytes(read_buf, byteorder='little')
 
         return c
-
-if __name__ == "__main__":
-
-    controller = M5Module4EncoderMotor()
-
-    print(f"Setting Mode to normal")
-    controller.setMode(0,NORMAL_MODE)
-    print(f"Setting speed of motor 0 to 120")
-    controller.setMotorSpeed(0,120)
-    time.sleep(5)
-    print(f"Setting speed of motor 0 to 0")
-    controller.setMotorSpeed(0,0)
